@@ -14,6 +14,17 @@ return [
     |
     */
 
+    
+    'panels' => [
+        'default' => [
+            // Adicionar esta configuração para desabilitar o cabeçalho do Filament
+            'navigation' => [
+                'displayUserMenu' => false,  // Desativa o menu do usuário
+                'displayBrand' => false, // Desativa a marca "Filament"
+            ],
+        ],
+    ],
+
     'broadcasting' => [
 
         // 'echo' => [
@@ -31,7 +42,10 @@ return [
 
     ],
 
+    'brand' => 'Trigão Estoque',
+
     /*
+    
     |--------------------------------------------------------------------------
     | Default Filesystem Disk
     |--------------------------------------------------------------------------
@@ -70,6 +84,8 @@ return [
     */
 
     'cache_path' => base_path('bootstrap/cache/filament'),
+
+    'locale' => 'pt_BR',
 
     /*
     |--------------------------------------------------------------------------

@@ -2,13 +2,13 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\ProdutoResource\Pages; // Importa o namespace das páginas associadas ao recurso
+use App\Filament\Resources\ProdutoResource\Pages;
 use App\Models\Produto;
-use Filament\Forms; // Certifique-se de que está usando o namespace correto para Forms
-use Filament\Forms\Form; // Importar o Form do Filament\Forms
+use Filament\Forms;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables; // Certifique-se de que está usando o namespace correto para Tables
-use Filament\Tables\Table; // Importar o Table do Filament\Tables
+use Filament\Tables;
+use Filament\Tables\Table;
 
 class ProdutoResource extends Resource
 {
@@ -29,9 +29,6 @@ class ProdutoResource extends Resource
                 Forms\Components\TextInput::make('secao')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('preco')
-                    ->numeric()
-                    ->required(),
                 Forms\Components\TextInput::make('quantidade')
                     ->numeric()
                     ->required(),
@@ -48,7 +45,7 @@ class ProdutoResource extends Resource
                 Tables\Columns\TextColumn::make('codigo')->label('Código'),
                 Tables\Columns\TextColumn::make('nome')->label('Nome'),
                 Tables\Columns\TextColumn::make('secao')->label('Seção'),
-                Tables\Columns\TextColumn::make('preco')->label('Preço'),
+                // Tables\Columns\TextColumn::make('preco')->label('Preço'),
                 Tables\Columns\TextColumn::make('quantidade')->label('Quantidade'),
                 Tables\Columns\TextColumn::make('unidade')->label('Unidade'),
             ]);
@@ -60,6 +57,18 @@ class ProdutoResource extends Resource
             'index' => Pages\ListProdutos::route('/'),
             'create' => Pages\CreateProduto::route('/create'),
             'edit' => Pages\EditProduto::route('/{record}/edit'),
+        ];
+    }
+
+    // Adiciona um botão global para criar novo produto no canto superior direito
+    public static function getGlobalActions(): array
+    {
+        return [
+            Tables\Actions\Action::make('create')
+                ->label('Adicionar Novo Produto')
+                ->icon('heroicon-o-plus')
+                ->url(static::getUrl('create'))
+                ->button(),
         ];
     }
 }
