@@ -29,9 +29,6 @@ class ProdutoResource extends Resource
                 Forms\Components\TextInput::make('secao')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('preco')
-                    ->numeric()
-                    ->required(),
                 Forms\Components\TextInput::make('quantidade')
                     ->numeric()
                     ->required(),

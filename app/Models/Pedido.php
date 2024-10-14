@@ -14,6 +14,7 @@ class Pedido extends Model
         'contato',
         'data',
         'valor',
+        'valor_final',
     ];
 
     // Relacionamento muitos-para-muitos com o modelo Produto

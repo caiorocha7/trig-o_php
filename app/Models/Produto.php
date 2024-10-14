@@ -24,9 +24,9 @@ class Produto extends Model
         'codigo' => 'string',
         'nome' => 'string',
         'secao' => 'string',
-        'preco' => 'decimal:2',
+        // 'preco' => 'decimal:2',
         'quantidade' => 'integer',
-        'unidade' => 'string',
+        'unidade' => 'decimal:2',
     ];
 
     public function pedidos()

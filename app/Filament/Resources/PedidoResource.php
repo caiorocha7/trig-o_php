@@ -52,6 +52,13 @@ class PedidoResource extends Resource
                         Forms\Components\Repeater::make('produtos')
                             ->relationship('produtos')
                             ->schema([
+                                // Adicionando o campo 'codigo' ao formulário
+                                TextInput::make('codigo')
+                                    ->label('Código')
+                                    ->disabled() // Desativado, pois o código já vem do produto
+                                    ->required() // Agora garantimos que o código seja obrigatório
+                                    ->columnSpan(3),
+
                                 Select::make('produto_id')
                                     ->label('Produto')
                                     ->options(Produto::all()->pluck('nome', 'id'))
@@ -61,6 +68,8 @@ class PedidoResource extends Resource
                                     ->afterStateUpdated(function ($state, callable $set) {
                                         $produto = Produto::find($state);
                                         if ($produto) {
+                                            // Preenchendo os campos automaticamente ao selecionar o produto
+                                            $set('codigo', $produto->codigo);
                                             $set('preco', $produto->unidade); // Definido como 'unidade'
                                         }
                                     })
@@ -89,11 +98,41 @@ class PedidoResource extends Resource
                 // Card de Resumo do Pedido
                 Card::make()
                     ->schema([
-                        TextInput::make('valor_parcial')
-                            ->label('Valor Parcial')
+                        TextInput::make('valor') // Alterado de 'valor_parcial' para 'valor'
+                            ->label('Valor Parcial') // Ajuste conforme necessário
                             ->numeric()
-                            ->disabled()
+                            ->required() // O campo valor é obrigatório
                             ->reactive()
+                            ->afterStateUpdated(function (callable $set, $state, $get) {
+                                // Recalcula o valor quando algo muda nos produtos
+                                $produtos = $get('produtos');
+                                $valor = 0;
+                        
+                                // Verifica se há produtos e realiza o cálculo
+                                if ($produtos) {
+                                    foreach ($produtos as $produto) {
+                                        $valor += ($produto['preco'] ?? 0) * ($produto['quantidade'] ?? 0);
+                                    }
+                                }
+                        
+                                // Atualiza o valor no campo
+                                $set('valor', $valor);
+                            })
+                            ->afterStateHydrated(function (callable $set, $state, $get) {
+                                // Recalcula o valor na hidratação (quando o formulário é carregado)
+                                $produtos = $get('produtos');
+                                $valor = 0;
+                        
+                                // Verifica se há produtos e realiza o cálculo
+                                if ($produtos) {
+                                    foreach ($produtos as $produto) {
+                                        $valor += ($produto['preco'] ?? 0) * ($produto['quantidade'] ?? 0);
+                                    }
+                                }
+                        
+                                // Atualiza o valor no campo
+                                $set('valor', $valor);
+                            })
                             ->columnSpan(6),
 
                         Select::make('tipo_desconto')
@@ -133,11 +172,22 @@ class PedidoResource extends Resource
                             ->reactive()
                             ->columnSpan(6),
 
-                        // Valor do desconto aplicado
+                        // Valor do desconto aplicado (calculado automaticamente)
                         TextInput::make('desconto_valor_calculado')
                             ->label('Valor do Desconto Aplicado')
                             ->numeric()
                             ->disabled()
+                            ->afterStateUpdated(function (callable $get, callable $set) {
+                                $valor = $get('valor') ?? 0;
+                                $descontoPercentual = $get('desconto_percentual') ?? 0;
+                                $descontoValor = $get('desconto_valor') ?? 0;
+
+                                if ($get('tipo_desconto') === 'percentual') {
+                                    $set('desconto_valor_calculado', $valor * ($descontoPercentual / 100));
+                                } else {
+                                    $set('desconto_valor_calculado', $descontoValor);
+                                }
+                            })
                             ->columnSpan(6),
 
                         // Valor final do pedido
@@ -146,6 +196,12 @@ class PedidoResource extends Resource
                             ->numeric()
                             ->disabled()
                             ->reactive()
+                            ->afterStateUpdated(function (callable $get, callable $set) {
+                                $valor = $get('valor') ?? 0;
+                                $descontoAplicado = $get('desconto_valor_calculado') ?? 0;
+
+                                $set('valor_final', max($valor - $descontoAplicado, 0)); // Evita valor negativo
+                            })
                             ->columnSpan(6),
                     ])
                     ->columns(12),
@@ -159,7 +215,7 @@ class PedidoResource extends Resource
                 Tables\Columns\TextColumn::make('cliente_nome')->label('Cliente'),
                 Tables\Columns\TextColumn::make('contato')->label('Contato'),
                 Tables\Columns\TextColumn::make('data')->label('Data do Pedido'),
-                Tables\Columns\TextColumn::make('valor_parcial')->label('Valor Parcial'),
+                Tables\Columns\TextColumn::make('valor')->label('Valor Parcial'), // Alterado 'valor_parcial' para 'valor'
                 Tables\Columns\TextColumn::make('valor_final')->label('Valor Final'),
             ]);
     }
@@ -171,5 +227,13 @@ class PedidoResource extends Resource
             'create' => Pages\CreatePedido::route('/create'),
             'edit' => Pages\EditPedido::route('/{record}/edit'),
         ];
+    }
+
+
+    public static function getRelations(): array
+    {
+    return [
+        \App\Filament\Resources\PedidoResource\RelationManagers\ProdutosRelationManager::class,
+    ];
     }
 }
