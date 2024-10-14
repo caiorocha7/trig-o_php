@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('cliente_nome');
             $table->string('contato');
             $table->date('data');
-            $table->decimal('valor_total', 10, 2)->default(0);  // Valor total do pedido
+            $table->decimal('valor_final', 10, 2)->default(0);
             $table->timestamps();
         });
     }

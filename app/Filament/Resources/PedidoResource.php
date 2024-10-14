@@ -95,8 +95,12 @@ class PedidoResource extends Resource
                             ->label('Produtos do Pedido')
                             ->columnSpan(12)
                             ->afterStateHydrated(function (callable $get, callable $set) {
-                                $valorTotal = collect($get('produtos') ?? [])->sum(fn ($produto) => $produto['subtotal'] ?? 0);
-                                $set('valor_total', $valorTotal);
+                                $valorFinal = collect($get('produtos') ?? [])->sum(fn ($produto) => $produto['subtotal'] ?? 0);
+                                $set('valor_final', $valorFinal);
+                            })
+                            ->afterStateUpdated(function (callable $get, callable $set) {
+                                $valorFinal = collect($get('produtos') ?? [])->sum(fn ($produto) => $produto['subtotal'] ?? 0);
+                                $set('valor_final', $valorFinal);
                             }),
                     ])
                     ->columns(12),
@@ -104,15 +108,11 @@ class PedidoResource extends Resource
                 // Card de Resumo do Pedido
                 Card::make()
                     ->schema([
-                        TextInput::make('valor_total')
+                        TextInput::make('valor_final')
                             ->label('Valor Total')
                             ->numeric()
                             ->disabled()
                             ->reactive()
-                            ->afterStateHydrated(function (callable $get, callable $set) {
-                                $valorTotal = collect($get('produtos') ?? [])->sum(fn ($produto) => $produto['subtotal'] ?? 0);
-                                $set('valor_total', $valorTotal);
-                            })
                             ->columnSpan(6),
                     ])
                     ->columns(12),
@@ -126,7 +126,7 @@ class PedidoResource extends Resource
                 Tables\Columns\TextColumn::make('cliente_nome')->label('Cliente'),
                 Tables\Columns\TextColumn::make('contato')->label('Contato'),
                 Tables\Columns\TextColumn::make('data')->label('Data do Pedido'),
-                Tables\Columns\TextColumn::make('valor_total')->label('Valor Total'),
+                Tables\Columns\TextColumn::make('valor_final')->label('Valor Total'),
             ]);
     }
 
