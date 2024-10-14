@@ -61,9 +61,9 @@ class PedidoResource extends Resource
                                     ->afterStateUpdated(function ($state, callable $set) {
                                         $produto = Produto::find($state);
                                         if ($produto) {
-                                            $set('preco', $produto->preco); // Preenche com o preço do produto
+                                            $set('preco', $produto->preco);
                                         } else {
-                                            $set('preco', null); // Reseta o preço se não encontrar
+                                            $set('preco', null);
                                         }
                                     })
                                     ->columnSpan(4),
@@ -72,100 +72,47 @@ class PedidoResource extends Resource
                                     ->label('Preço Unitário')
                                     ->numeric()
                                     ->required()
-                                    ->columnSpan(4)
-                                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                        $quantidade = $get('quantidade') ?? 0;
-                                        $valorParcial = $state * $quantidade;
-                                        $set('valor_parcial', $valorParcial);
-                                    }),
+                                    ->columnSpan(4),
 
                                 TextInput::make('quantidade')
                                     ->label('Quantidade')
                                     ->numeric()
                                     ->required()
-                                    ->columnSpan(4)
+                                    ->reactive()
                                     ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                         $preco = $get('preco') ?? 0;
-                                        $valorParcial = $preco * $state;
-                                        $set('valor_parcial', $valorParcial);
-                                    }),
+                                        $set('subtotal', $preco * $state);
+                                    })
+                                    ->columnSpan(4),
+
+                                TextInput::make('subtotal')
+                                    ->label('Subtotal')
+                                    ->numeric()
+                                    ->disabled()
+                                    ->columnSpan(4),
                             ])
-                            ->columns(12) // Deixa os campos em linha única
+                            ->columns(12)
                             ->label('Produtos do Pedido')
-                            ->columnSpan(12),
+                            ->columnSpan(12)
+                            ->afterStateHydrated(function (callable $get, callable $set) {
+                                $valorTotal = collect($get('produtos') ?? [])->sum(fn ($produto) => $produto['subtotal'] ?? 0);
+                                $set('valor_total', $valorTotal);
+                            }),
                     ])
                     ->columns(12),
 
                 // Card de Resumo do Pedido
                 Card::make()
                     ->schema([
-                        TextInput::make('valor_parcial')
-                            ->label('Valor Parcial')
-                            ->numeric()
-                            ->disabled()
-                            ->columnSpan(6),
-
-                        Select::make('tipo_desconto')
-                            ->label('Tipo de Desconto')
-                            ->options([
-                                'percentual' => 'Porcentagem (%)',
-                                'valor_fixo' => 'Valor Fixo (R$)',
-                            ])
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set) {
-                                if ($state === 'percentual') {
-                                    $set('desconto_percentual', 0);
-                                    $set('desconto_valor', null);
-                                } else {
-                                    $set('desconto_valor', 0);
-                                    $set('desconto_percentual', null);
-                                }
-                            })
-                            ->columnSpan(6),
-
-                        // Campo de desconto percentual
-                        TextInput::make('desconto_percentual')
-                            ->label('Desconto (%)')
-                            ->numeric()
-                            ->minValue(0)
-                            ->maxValue(100)
-                            ->hidden(fn (callable $get) => $get('tipo_desconto') !== 'percentual')
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                $valorParcial = $get('valor_parcial') ?? 0;
-                                $desconto = $state;
-                                $valorFinal = $valorParcial - ($valorParcial * $desconto / 100);
-                                $set('valor_final', $valorFinal);
-                            })
-                            ->columnSpan(6),
-
-                        // Campo de desconto em valor fixo
-                        TextInput::make('desconto_valor')
-                            ->label('Desconto (R$)')
-                            ->numeric()
-                            ->minValue(0)
-                            ->hidden(fn (callable $get) => $get('tipo_desconto') !== 'valor_fixo')
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                $valorParcial = $get('valor_parcial') ?? 0;
-                                $valorFinal = $valorParcial - $state;
-                                $set('valor_final', $valorFinal);
-                            })
-                            ->columnSpan(6),
-
-                        // Valor do desconto aplicado
-                        TextInput::make('desconto_valor_calculado')
-                            ->label('Valor do Desconto Aplicado')
-                            ->numeric()
-                            ->disabled()
-                            ->columnSpan(6),
-
-                        // Valor final do pedido
-                        TextInput::make('valor_final')
-                            ->label('Valor Final')
+                        TextInput::make('valor_total')
+                            ->label('Valor Total')
                             ->numeric()
                             ->disabled()
                             ->reactive()
+                            ->afterStateHydrated(function (callable $get, callable $set) {
+                                $valorTotal = collect($get('produtos') ?? [])->sum(fn ($produto) => $produto['subtotal'] ?? 0);
+                                $set('valor_total', $valorTotal);
+                            })
                             ->columnSpan(6),
                     ])
                     ->columns(12),
@@ -179,8 +126,7 @@ class PedidoResource extends Resource
                 Tables\Columns\TextColumn::make('cliente_nome')->label('Cliente'),
                 Tables\Columns\TextColumn::make('contato')->label('Contato'),
                 Tables\Columns\TextColumn::make('data')->label('Data do Pedido'),
-                Tables\Columns\TextColumn::make('valor_parcial')->label('Valor Parcial'),
-                Tables\Columns\TextColumn::make('valor_final')->label('Valor Final'),
+                Tables\Columns\TextColumn::make('valor_total')->label('Valor Total'),
             ]);
     }
 
