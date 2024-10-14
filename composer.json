@@ -12,6 +12,7 @@
         "filament/widgets": "^3.2",
         "laravel/framework": "^11.9",
         "laravel/tinker": "^2.9",
+        "livewire/livewire": "^3.5",
         "nesbot/carbon": "^2.72",
         "spatie/laravel-dashboard": "^3.1",
         "spatie/laravel-permission": "^6.9"

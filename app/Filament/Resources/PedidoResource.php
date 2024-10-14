@@ -61,7 +61,9 @@ class PedidoResource extends Resource
                                     ->afterStateUpdated(function ($state, callable $set) {
                                         $produto = Produto::find($state);
                                         if ($produto) {
-                                            $set('preco', $produto->unidade); // Definido como 'unidade'
+                                            $set('preco', $produto->preco); // Preenche com o preço do produto
+                                        } else {
+                                            $set('preco', null); // Reseta o preço se não encontrar
                                         }
                                     })
                                     ->columnSpan(4),
@@ -69,16 +71,24 @@ class PedidoResource extends Resource
                                 TextInput::make('preco')
                                     ->label('Preço Unitário')
                                     ->numeric()
-                                    ->disabled()
-                                    ->reactive() // Preenchido automaticamente
-                                    ->columnSpan(4),
+                                    ->required()
+                                    ->columnSpan(4)
+                                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                        $quantidade = $get('quantidade') ?? 0;
+                                        $valorParcial = $state * $quantidade;
+                                        $set('valor_parcial', $valorParcial);
+                                    }),
 
                                 TextInput::make('quantidade')
                                     ->label('Quantidade')
                                     ->numeric()
                                     ->required()
-                                    ->reactive()
-                                    ->columnSpan(4),
+                                    ->columnSpan(4)
+                                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                        $preco = $get('preco') ?? 0;
+                                        $valorParcial = $preco * $state;
+                                        $set('valor_parcial', $valorParcial);
+                                    }),
                             ])
                             ->columns(12) // Deixa os campos em linha única
                             ->label('Produtos do Pedido')
@@ -93,7 +103,6 @@ class PedidoResource extends Resource
                             ->label('Valor Parcial')
                             ->numeric()
                             ->disabled()
-                            ->reactive()
                             ->columnSpan(6),
 
                         Select::make('tipo_desconto')
@@ -122,6 +131,12 @@ class PedidoResource extends Resource
                             ->maxValue(100)
                             ->hidden(fn (callable $get) => $get('tipo_desconto') !== 'percentual')
                             ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                $valorParcial = $get('valor_parcial') ?? 0;
+                                $desconto = $state;
+                                $valorFinal = $valorParcial - ($valorParcial * $desconto / 100);
+                                $set('valor_final', $valorFinal);
+                            })
                             ->columnSpan(6),
 
                         // Campo de desconto em valor fixo
@@ -131,6 +146,11 @@ class PedidoResource extends Resource
                             ->minValue(0)
                             ->hidden(fn (callable $get) => $get('tipo_desconto') !== 'valor_fixo')
                             ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                $valorParcial = $get('valor_parcial') ?? 0;
+                                $valorFinal = $valorParcial - $state;
+                                $set('valor_final', $valorFinal);
+                            })
                             ->columnSpan(6),
 
                         // Valor do desconto aplicado

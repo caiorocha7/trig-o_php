@@ -45,13 +45,22 @@ class ProdutoResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('codigo')->label('Código'),
-                Tables\Columns\TextColumn::make('nome')->label('Nome'),
-                Tables\Columns\TextColumn::make('secao')->label('Seção'),
-                // Tables\Columns\TextColumn::make('preco')->label('Preço'),
-                Tables\Columns\TextColumn::make('quantidade')->label('Quantidade'),
-                Tables\Columns\TextColumn::make('unidade')->label('Unidade'),
-            ]);
+                Tables\Columns\TextColumn::make('codigo')
+                    ->label('Código')
+                    ->searchable(), // Adiciona pesquisa para a coluna código
+                Tables\Columns\TextColumn::make('nome')
+                    ->label('Nome')
+                    ->searchable(), // Adiciona pesquisa para a coluna nome
+                Tables\Columns\TextColumn::make('secao')
+                    ->label('Seção')
+                    ->searchable(), // Adiciona pesquisa para a coluna secao
+                Tables\Columns\TextColumn::make('quantidade')
+                    ->label('Quantidade'),
+                Tables\Columns\TextColumn::make('unidade')
+                    ->label('Unidade'),
+            ])
+            ->defaultSort('nome') // Define a coluna padrão de ordenação
+            ->filters([]); // Adicione filtros aqui, se necessário
     }
 
     public static function getPages(): array

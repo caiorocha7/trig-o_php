@@ -5,16 +5,27 @@ namespace App\Filament\Widgets;
 use App\Models\Pedido;
 use ArielMejiaDev\LarapexCharts\LarapexChart;
 use Filament\Widgets\Widget;
-use Illuminate\Contracts\View\View;
+use Filament\Forms\Components\DatePicker;
+use Illuminate\Support\Carbon;
 
 class SalesChart extends Widget
 {
     protected static ?string $heading = 'Vendas Semanais';
+    protected static string $view = 'filament.widgets.sales-chart'; // Especifique a view correta
+
+    public ?string $startDate = null;
+    public ?string $endDate = null;
 
     protected function getData(): array
     {
-        // Atualizando a query para usar a coluna 'valor'
-        $salesByWeek = Pedido::selectRaw('DATE_TRUNC(\'week\', created_at) as week, SUM(valor) as total')
+        $query = Pedido::query();
+
+        // Filtro de datas
+        if ($this->startDate && $this->endDate) {
+            $query->whereBetween('created_at', [$this->startDate, $this->endDate]);
+        }
+
+        $salesByWeek = $query->selectRaw('DATE_TRUNC(\'week\', created_at) as week, SUM(valor) as total')
             ->groupBy('week')
             ->orderBy('week')
             ->get();
@@ -27,10 +38,5 @@ class SalesChart extends Widget
         return [
             'chart' => $chart,
         ];
-    }
-
-    public function render(): View
-    {
-        return view('filament.widgets.sales-chart', $this->getData());
     }
 }
